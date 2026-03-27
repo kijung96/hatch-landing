@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HATCH 관리자</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Pretendard',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh}
+
+/* ===== LOGIN ===== */
+#login{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;
+}
+.login-box{
+  background:#fff;border-radius:16px;padding:48px 40px;
+  width:100%;max-width:360px;
+  box-shadow:0 4px 24px rgba(0,0,0,.08);
+  text-align:center;
+}
+.login-box h1{font-size:22px;font-weight:700;margin-bottom:8px}
+.login-box p{font-size:14px;color:#666;margin-bottom:28px}
+.login-box input{
+  width:100%;padding:12px 16px;border:1.5px solid #e0e0e0;
+  border-radius:10px;font-size:15px;outline:none;
+  transition:border-color .2s;margin-bottom:12px;
+}
+.login-box input:focus{border-color:#6C5CE7}
+.login-box button{
+  width:100%;padding:13px;background:#6C5CE7;color:#fff;
+  border:none;border-radius:10px;font-size:15px;font-weight:600;
+  cursor:pointer;transition:background .2s;
+}
+.login-box button:hover{background:#5548D1}
+.login-err{font-size:13px;color:#e53e3e;margin-top:8px;display:none}
+
+/* ===== DASHBOARD ===== */
+#dashboard{display:none}
+.top-bar{
+  background:#fff;border-bottom:1px solid #e0e0e0;
+  padding:0 32px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.top-bar .logo{font-size:17px;font-weight:700;letter-spacing:-0.5px}
+.top-bar .logout{font-size:13px;color:#999;cursor:pointer;background:none;border:none;}
+.top-bar .logout:hover{color:#333}
+
+.main{padding:32px}
+.stat-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+  margin-bottom:28px;
+}
+.stat-card{
+  background:#fff;border-radius:12px;padding:20px 24px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
+}
+.stat-card .label{font-size:12px;color:#999;margin-bottom:6px}
+.stat-card .value{font-size:28px;font-weight:700;color:#1d1d1f}
+.stat-card.purple .value{color:#6C5CE7}
+
+.table-wrap{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+.table-header{
+  padding:18px 24px;border-bottom:1px solid #f0f0f0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.table-header h2{font-size:15px;font-weight:600}
+.refresh-btn{
+  font-size:13px;color:#6C5CE7;background:none;border:none;cursor:pointer;font-weight:500;
+}
+.refresh-btn:hover{opacity:.7}
+
+table{width:100%;border-collapse:collapse}
+th{
+  font-size:12px;font-weight:600;color:#999;text-align:left;
+  padding:12px 16px;background:#fafafa;border-bottom:1px solid #f0f0f0;
+}
+td{
+  font-size:13px;padding:14px 16px;border-bottom:1px solid #f5f5f5;
+  vertical-align:top;
+}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafe}
+
+.badge{
+  display:inline-block;padding:3px 10px;border-radius:99px;
+  font-size:11px;font-weight:600;
+}
+.badge.pending{background:#fff3cd;color:#856404}
+.badge.done{background:#d1fae5;color:#065f46}
+
+.toggle-btn{
+  font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;
+  border:1.5px solid #e0e0e0;background:#fff;color:#555;
+  transition:all .2s;white-space:nowrap;
+}
+.toggle-btn:hover{border-color:#6C5CE7;color:#6C5CE7}
+
+.msg-cell{max-width:200px;color:#666;line-height:1.5}
+.time-cell{color:#999;white-space:nowrap}
+
+.empty{padding:48px;text-align:center;color:#999;font-size:14px}
+.loading{padding:48px;text-align:center;color:#999;font-size:14px}
+
+@media(max-width:768px){
+  .main{padding:16px}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .table-wrap{overflow-x:auto}
+  table{min-width:640px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <h1>HATCH 관리자</h1>
+    <p>상담 신청 내역을 확인합니다</p>
+    <input type="password" id="pw-input" placeholder="비밀번호 입력" autocomplete="current-password">
+    <button onclick="doLogin()">로그인</button>
+    <div class="login-err" id="login-err">비밀번호가 올바르지 않습니다</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="top-bar">
+    <span class="logo">HATCH 관리자</span>
+    <button class="logout" onclick="doLogout()">로그아웃</button>
+  </div>
+  <div class="main">
+    <div class="stat-row">
+      <div class="stat-card purple">
+        <div class="label">전체 신청</div>
+        <div class="value" id="stat-total">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">대기중</div>
+        <div class="value" id="stat-pending">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">완료</div>
+        <div class="value" id="stat-done">-</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <h2>상담 신청 목록</h2>
+        <button class="refresh-btn" onclick="loadData()">새로고침</button>
+      </div>
+      <div id="table-body">
+        <div class="loading">불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PASS = 'hatch2025';
+const _sb = supabase.createClient(
+  'https://rinegmiqquwizxyqomtv.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpbmVnbWlxcXV3aXp4eXFvbXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MDgzMTcsImV4cCI6MjA5MDE4NDMxN30.UfMO_2SW-8eehyW3LjNR_mLY469K35K9pkCo3iXKobQ'
+);
+
+// 로그인 상태 확인
+if (sessionStorage.getItem('hatch_admin') === '1') showDashboard();
+
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogin() {
+  const val = document.getElementById('pw-input').value;
+  if (val === PASS) {
+    sessionStorage.setItem('hatch_admin', '1');
+    showDashboard();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('hatch_admin');
+  location.reload();
+}
+
+function showDashboard() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadData();
+}
+
+async function loadData() {
+  document.getElementById('table-body').innerHTML = '<div class="loading">불러오는 중...</div>';
+
+  const { data, error } = await _sb
+    .from('consultations')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error || !data) {
+    document.getElementById('table-body').innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>';
+    return;
+  }
+
+  // 통계
+  const total   = data.length;
+  const pending = data.filter(r => r.status === 'pending').length;
+  const done    = data.filter(r => r.status === 'done').length;
+  document.getElementById('stat-total').textContent   = total;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-done').textContent    = done;
+
+  if (total === 0) {
+    document.getElementById('table-body').innerHTML = '<div class="empty">아직 신청 내역이 없습니다.</div>';
+    return;
+  }
+
+  const rows = data.map(r => {
+    const date = new Date(r.created_at).toLocaleString('ko-KR', {
+      month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'
+    });
+    const isDone = r.status === 'done';
+    return `
+      <tr id="row-${r.id}">
+        <td class="time-cell">${date}</td>
+        <td><b>${r.store_name}</b></td>
+        <td>${r.category || '-'}</td>
+        <td>${r.name}</td>
+        <td>${r.phone}</td>
+        <td class="msg-cell">${r.message || '-'}</td>
+        <td>
+          <span class="badge ${isDone ? 'done' : 'pending'}" id="badge-${r.id}">
+            ${isDone ? '완료' : '대기중'}
+          </span>
+        </td>
+        <td>
+          <button class="toggle-btn" onclick="toggleStatus('${r.id}', '${r.status}')">
+            ${isDone ? '대기중으로' : '완료 처리'}
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('table-body').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>접수시간</th>
+          <th>매장명</th>
+          <th>업종</th>
+          <th>담당자</th>
+          <th>연락처</th>
+          <th>고민내용</th>
+          <th>상태</th>
+          <th>처리</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+async function toggleStatus(id, current) {
+  const next = current === 'pending' ? 'done' : 'pending';
+  const { error } = await _sb.from('consultations').update({ status: next }).eq('id', id);
+  if (!error) loadData();
+}
+</script>
+</body>
+</html>
