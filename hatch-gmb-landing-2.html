@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HATCH — 외국인 관광객 유입 전문 구글맵 최적화</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+/* ===== TOKENS ===== */
+:root {
+  --p: #6C5CE7;
+  --p-dk: #5548D1;
+  --text: #181925;
+  --body: #666;
+  --muted: rgba(0,0,0,0.4);
+  --border: rgba(0,0,0,0.08);
+  --card-bg: rgba(0,0,0,0.03);
+  --nav-h: 68px;
+  --max: 1100px;
+  --font: 'Pretendard', -apple-system, sans-serif;
+}
+
+/* ===== RESET ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+ul{list-style:none}
+button{cursor:pointer;border:none;background:none;font-family:var(--font)}
+img{max-width:100%;display:block}
+
+/* ===== LAYOUT ===== */
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+.sec{padding:96px 0}
+
+/* ===== SCROLL REVEAL ===== */
+.rev{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease}
+.rev.on{opacity:1;transform:none}
+.rev-1{transition-delay:.08s}
+.rev-2{transition-delay:.16s}
+.rev-3{transition-delay:.24s}
+.rev-4{transition-delay:.32s}
+
+/* ===== TYPOGRAPHY ===== */
+.h1{font-size:clamp(42px,6.5vw,76px);font-weight:800;letter-spacing:-3.5px;line-height:1.08;color:var(--text)}
+.grad-text{background:linear-gradient(135deg,#7c3aed 0%,#4f46e5 50%,#06b6d4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-0.025em;line-height:1.25;color:var(--text)}
+
+/* ===== SECTION HEADER ===== */
+.section-header{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;margin-bottom:56px}
+.section-header p{font-size:15px;color:var(--body);line-height:1.6;margin:0}
+.pill{display:inline-block;padding:4px 14px;border-radius:99px;background:rgba(0,0,0,.06);color:rgba(0,0,0,.4);font-size:13px;font-weight:500;letter-spacing:.02em}
+.highlight{color:var(--p)}
+.body-txt{font-size:16px;color:var(--body);line-height:1.7}
+
+/* ===== BUTTONS ===== */
+.btn-p{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:7px 22px;border-radius:99px;
+  background:var(--p);color:#fff;
+  font-size:15px;font-weight:600;
+  transition:background .2s,transform .15s;
+  cursor:pointer;border:none;font-family:var(--font);
+}
+.btn-p:hover{background:var(--p-dk);transform:translateY(-1px)}
+.btn-p.lg{padding:11px 28px;font-size:16px}
+.btn-txt{
+  font-size:14px;color:var(--p);font-weight:500;
+  transition:opacity .2s;display:inline-flex;align-items:center;gap:6px;
+}
+.btn-txt:hover{opacity:.7}
+
+/* ===== NAV ===== */
+#nav{
+  position:fixed;top:20px;left:0;right:0;
+  height:auto;z-index:100;
+  display:flex;justify-content:center;
+  pointer-events:none;
+}
+.nav-pill{
+  display:inline-flex;align-items:center;justify-content:space-between;
+  gap:24px;
+  padding:4px 10px 4px 22px;
+  background:rgba(18,18,28,.88);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-radius:99px;
+  border:1px solid rgba(255,255,255,.1);
+  pointer-events:all;
+  min-width:320px;max-width:680px;width:100%;
+  transition:box-shadow .3s;
+}
+#nav.sc .nav-pill{
+  box-shadow:0 4px 32px rgba(0,0,0,.18);
+}
+.nav-in{display:contents}
+.logo{font-size:18px;font-weight:700;letter-spacing:-1px;color:#fff}
+.nav-pill .btn-p{
+  background:var(--p);padding:7px 20px;font-size:14px;
+}
+.nav-pill .btn-p:hover{background:var(--p-dk)}
+
+/* ===== HERO ===== */
+#hero{
+  padding-top:200px;
+  padding-bottom:0;
+  text-align:center;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(108,92,231,.08);
+  border:1px solid rgba(108,92,231,.18);
+  border-radius:99px;
+  padding:5px 14px 5px 6px;
+  margin-bottom:28px;
+  font-size:13px;color:var(--body);
+}
+.hero-badge-tag{
+  background:var(--p);color:#fff;
+  font-size:11px;font-weight:700;letter-spacing:.04em;
+  border-radius:99px;padding:2px 10px;
+}
+.hero-h1{margin-bottom:24px}
+.hero-sub{
+  max-width:500px;margin:0 auto 36px;
+  font-size:18px;color:var(--body);line-height:1.7;
+  font-weight:400;
+}
+.hero-cta-wrap{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+  gap:12px;margin-bottom:14px;
+}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 22px;border-radius:99px;
+  background:#fff;
+  border:1.5px solid rgba(0,0,0,.15);
+  color:var(--text);
+  font-size:15px;font-weight:600;font-family:var(--font);
+  transition:border-color .2s,transform .15s;
+  cursor:pointer;
+}
+.btn-ghost:hover{border-color:var(--p);color:var(--p);transform:translateY(-1px)}
+.btn-ghost.lg{padding:11px 28px;font-size:16px}
+.hero-cta-wrap{margin-bottom:48px}
+.hero-stats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  padding-bottom:0;
+}
+.h-stat{
+  padding:28px 16px;
+  text-align:center;
+}
+.h-stat-icon{
+  width:34px;height:34px;border-radius:50%;
+  border:1.5px solid rgba(108,92,231,.35);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;
+  color:var(--p);
+}
+.h-stat-text{
+  font-size:14px;color:var(--text);line-height:1.65;
+}
+.h-stat-text strong{font-weight:700;}
+
+/* ===== EMPATHY SECTION ===== */
+#problem{background:linear-gradient(180deg,#f8f7ff 0%,#eee9ff 100%)}
+.emp-cta-banner{
+  background:var(--p);border-radius:14px;
+  padding:32px 40px;margin-top:24px;text-align:center;
+}
+.emp-cta-banner p{
+  font-size:16px;line-height:1.8;
+  color:rgba(255,255,255,.88);
+}
+.emp-cta-banner strong{font-weight:700;color:#fff}
+
+/* ===== EMPATHY CARDS ===== */
+.emp-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
+  margin-top:48px;
+}
+.emp-card{
+  background:var(--card-bg);border-radius:16px;
+  padding:32px 28px;
+}
+.emp-icon{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:20px;
+}
+.emp-card h3{font-size:17px;font-weight:600;color:var(--text);margin-bottom:10px}
+.emp-card p{font-size:14px;color:var(--body);line-height:1.7}
+
+/* ===== RESULTS CAROUSEL ===== */
+.carousel-wrapper{
+  overflow:hidden;position:relative;
+  padding:20px 0;cursor:grab;
+}
+.carousel-wrapper:active{cursor:grabbing}
+.carousel-track{
+  display:flex;gap:20px;
+  transition:transform .45s cubic-bezier(.25,.46,.45,.94);
+  user-select:none;
+}
+.result-card{
+  flex:0 0 calc(25vw - 15px);
+  background:var(--card-bg);border-radius:16px;
+  padding:32px;
+  transition:transform .45s ease,opacity .45s ease;
+}
+.result-card.active{transform:scale(1);opacity:1}
+.result-card.side{transform:scale(.88);opacity:.4}
+.result-card.hidden{opacity:0;pointer-events:none}
+.result-tag{
+  display:inline-block;padding:4px 12px;border-radius:99px;
+  background:rgba(108,92,231,.08);color:#6C5CE7;
+  font-size:12px;font-weight:500;margin-bottom:20px;
+}
+.result-metric{display:flex;flex-direction:column;gap:2px;margin-bottom:20px}
+.result-metric-text{
+  font-size:20px;font-weight:600;color:#6C5CE7;
+  letter-spacing:-.5px;margin:0 0 4px;line-height:1.3;
+}
+.result-period{font-size:13px;color:#6C5CE7;opacity:.7}
+.result-quote{font-size:15px;color:#666;line-height:1.6;margin:0 0 16px}
+.result-contract{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:99px;
+  background:rgba(108,92,231,.06);
+  font-size:12px;color:#6C5CE7;opacity:.8;
+}
+.car-ctrl{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:4px}
+.car-btn{
+  width:42px;height:42px;border-radius:50%;
+  border:1px solid var(--border);background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--p);transition:all .2s;cursor:pointer;
+}
+.car-btn:hover{border-color:var(--p);background:rgba(108,92,231,.05)}
+.car-dots{display:flex;gap:6px}
+.c-dot{
+  width:7px;height:7px;border-radius:4px;
+  background:rgba(0,0,0,0.15);transition:all .3s;cursor:pointer;
+}
+.c-dot.on{width:22px;background:var(--p)}
+
+/* ===== PROCESS STEPPER ===== */
+.proc-steps{margin-top:48px;max-width:680px;margin-left:auto;margin-right:auto}
+.proc-step{display:flex;gap:20px;align-items:flex-start}
+.proc-step-rail{
+  display:flex;flex-direction:column;align-items:center;
+  flex-shrink:0;padding-top:2px;
+}
+.proc-num{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--p);color:#fff;
+  font-size:13px;font-weight:700;letter-spacing:-.5px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.proc-rail-line{width:2px;flex:1;background:var(--border);min-height:44px;margin:6px 0}
+.proc-step:last-child .proc-rail-line{display:none}
+.proc-card{
+  flex:1;background:var(--card-bg);border-radius:16px;
+  padding:24px 28px;margin-bottom:16px;
+}
+.proc-step:last-child .proc-card{margin-bottom:0}
+.proc-card-top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:8px}
+.proc-card h3{font-size:16px;font-weight:600;color:var(--text)}
+.proc-dur{
+  flex-shrink:0;font-size:11px;font-weight:600;
+  color:var(--p);background:rgba(108,92,231,.1);
+  border-radius:99px;padding:2px 10px;
+}
+.proc-card p{font-size:14px;color:var(--body);line-height:1.7}
+
+/* ===== PACKAGES ===== */
+#packages{background:linear-gradient(180deg,#f7f5ff 0%,#ece7ff 100%)}
+.pkg-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
+  align-items:start;margin-top:48px;
+}
+.pkg-card{
+  border-radius:20px;padding:36px 28px;
+  background:#fff;border:1.5px solid rgba(0,0,0,.07);
+  position:relative;
+}
+.pkg-card.hot{
+  border-color:var(--p);
+  box-shadow:0 12px 48px rgba(108,92,231,.15);
+}
+.pkg-badge{
+  position:absolute;top:20px;right:20px;
+  background:var(--p);color:#fff;
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  padding:3px 12px;border-radius:99px;white-space:nowrap;
+}
+.pkg-label{
+  font-size:11px;font-weight:700;letter-spacing:.1em;
+  color:var(--muted);text-transform:uppercase;margin-bottom:16px;
+}
+.pkg-price{
+  font-size:22px;font-weight:700;color:var(--text);
+  letter-spacing:-0.5px;line-height:1.2;margin-bottom:4px;
+}
+.pkg-sub{font-size:13px;color:var(--body);margin-bottom:22px;line-height:1.5}
+.pkg-divider{height:1px;background:var(--border);margin-bottom:20px}
+.pkg-features{list-style:none;margin-bottom:32px;display:flex;flex-direction:column;gap:9px}
+.pkg-features li{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:13.5px;color:var(--text);line-height:1.5;
+}
+.pkg-features li::before{
+  content:'';flex-shrink:0;margin-top:2px;
+  width:17px;height:17px;border-radius:50%;
+  background:rgba(108,92,231,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='7' viewBox='0 0 9 7'%3E%3Cpath d='M1 3.5l2.5 2.5L8 1' stroke='%236C5CE7' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") no-repeat center;
+}
+.pkg-cta{
+  display:block;text-align:center;
+  padding:13px;border-radius:99px;
+  font-size:14px;font-weight:600;
+  transition:all .2s;cursor:pointer;
+  font-family:var(--font);border:none;
+}
+.pkg-cta.outline{background:transparent;border:1.5px solid rgba(0,0,0,.2);color:var(--text)}
+.pkg-cta.outline:hover{border-color:var(--p);color:var(--p)}
+.pkg-cta.fill{background:var(--p);color:#fff}
+.pkg-cta.fill:hover{background:var(--p-dk)}
+
+/* ===== FAQ — MINIMAL LINE STYLE ===== */
+.faq-list{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.faq-item{
+  background:#fff;border:1.5px solid var(--border);
+  border-radius:14px;overflow:hidden;
+}
+.faq-q{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 24px;cursor:pointer;gap:16px;
+  font-size:15px;font-weight:500;color:var(--text);
+  user-select:none;transition:color .2s;
+  background:none;border:none;width:100%;text-align:left;
+  font-family:var(--font);
+}
+.faq-q:hover{color:var(--p)}
+.faq-arrow{
+  width:22px;height:22px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .3s ease;color:var(--p);
+}
+.faq-item.open .faq-arrow{transform:rotate(45deg)}
+.faq-a{
+  max-height:0;overflow:hidden;
+  transition:max-height .4s ease;
+}
+.faq-a-in{
+  padding:0 24px 20px;
+  font-size:14px;color:var(--body);line-height:1.75;
+}
+
+/* ===== CONTACT ===== */
+#contact{background:var(--card-bg)}
+.contact-inner{max-width:560px;margin:0 auto;text-align:center}
+.form-wrap{margin-top:40px;text-align:left}
+.f-group{margin-bottom:18px}
+.f-label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px}
+.f-input{
+  width:100%;padding:13px 16px;
+  border:1.5px solid var(--border);border-radius:10px;
+  font-size:15px;font-family:var(--font);color:var(--text);background:#fff;
+  outline:none;transition:border-color .2s;
+}
+.f-input:focus{border-color:var(--p)}
+.f-input::placeholder{color:#bbb}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+textarea.f-input{resize:vertical;min-height:110px}
+.f-sub{
+  width:100%;margin-top:8px;
+  padding:16px;border-radius:99px;
+  background:var(--p);color:#fff;
+  font-size:16px;font-weight:600;font-family:var(--font);
+  cursor:pointer;border:none;
+  transition:background .2s,transform .15s;
+}
+.f-sub:hover{background:var(--p-dk);transform:translateY(-1px)}
+.ty-msg{display:none;text-align:center;padding:48px 0}
+.ty-msg p{font-size:18px;font-weight:600;color:var(--text);margin-top:12px}
+.ty-msg small{font-size:14px;color:var(--body)}
+
+/* ===== FOOTER ===== */
+#footer{padding:48px 0;border-top:1px solid var(--border)}
+.ft-inner{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:24px}
+.ft-logo{font-size:18px;font-weight:700;letter-spacing:-1px;margin-bottom:10px}
+.ft-info{font-size:13px;color:var(--body);line-height:1.9}
+.ft-info a{color:var(--body);transition:color .2s}
+.ft-info a:hover{color:var(--p)}
+.ft-copy{font-size:12px;color:rgba(0,0,0,0.3);align-self:flex-end}
+
+/* ===== MOBILE MENU ===== */
+#mob-menu{
+  display:none;position:fixed;
+  top:var(--nav-h);left:0;right:0;
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:20px 24px;z-index:99;
+  flex-direction:column;gap:4px;
+}
+#mob-menu.open{display:flex}
+#mob-menu a{
+  padding:12px 0;font-size:16px;font-weight:500;
+  color:var(--text);border-bottom:1px solid var(--border);
+}
+#mob-menu a:last-child{border-bottom:none}
+.nav-hbg{display:none;flex-direction:column;gap:5px;padding:8px;cursor:pointer}
+.nav-hbg span{display:block;width:20px;height:1.5px;background:var(--text);border-radius:2px;transition:all .3s}
+.nav-links{display:flex;align-items:center;gap:28px;list-style:none;margin:0;padding:0}
+.nav-links a{font-size:14px;font-weight:400;color:rgba(255,255,255,0.5);text-decoration:none;transition:color .2s;white-space:nowrap}
+.nav-links a:hover{color:rgba(255,255,255,0.9)}
+
+/* ===== HERO PREVIEW ===== */
+.hero-preview{
+  position:relative;overflow:hidden;
+  padding:64px 32px 0;
+  background:linear-gradient(148deg,#ddd6fe 0%,#a78bfa 28%,#7c3aed 58%,#4338ca 100%);
+}
+.p-blob{
+  position:absolute;border-radius:50%;
+  filter:blur(72px);pointer-events:none;
+}
+.p-blob-1{width:480px;height:480px;background:rgba(167,139,250,.55);top:-160px;left:-80px}
+.p-blob-2{width:320px;height:320px;background:rgba(99,102,241,.45);bottom:0;right:-60px}
+.p-blob-3{width:220px;height:220px;background:rgba(196,181,253,.4);top:40px;right:22%}
+.preview-card{
+  position:relative;background:#fff;
+  border-radius:16px 16px 0 0;
+  max-width:840px;margin:0 auto;
+  box-shadow:0 28px 80px rgba(0,0,0,.22);
+  overflow:hidden;
+}
+/* Browser chrome */
+.maps-chrome{
+  background:#f0f0f0;padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid rgba(0,0,0,.07);
+}
+.chrome-dots{display:flex;gap:5px;flex-shrink:0}
+.chrome-dot{width:11px;height:11px;border-radius:50%}
+.chrome-dot.r{background:#ff5f57}
+.chrome-dot.y{background:#febc2e}
+.chrome-dot.g{background:#28c840}
+.chrome-url{
+  flex:1;background:#fff;border-radius:6px;
+  padding:5px 12px;font-size:11px;color:#888;
+  text-align:center;border:1px solid rgba(0,0,0,.08);
+}
+/* Maps body */
+.maps-body{display:flex;height:300px}
+.maps-list{
+  width:230px;flex-shrink:0;
+  background:#fff;padding:14px 12px;
+  border-right:1px solid rgba(0,0,0,.07);
+  overflow:hidden;
+}
+.maps-list-title{font-size:11px;font-weight:600;color:#999;letter-spacing:.02em;margin-bottom:10px}
+/* 1위 result */
+.maps-top{
+  background:#f0edff;border-radius:10px;
+  padding:10px;margin-bottom:8px;position:relative;
+}
+.maps-top-row{display:flex;align-items:flex-start;gap:9px}
+.maps-icon-box{
+  width:34px;height:34px;border-radius:8px;
+  background:var(--p);color:#fff;font-size:14px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;position:relative;
+}
+.maps-rank{
+  position:absolute;top:-7px;right:-7px;
+  background:var(--p);color:#fff;
+  font-size:9px;font-weight:700;
+  width:18px;height:18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid #f0edff;
+}
+.maps-store-name{font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:3px;line-height:1.3}
+.maps-stars{display:flex;align-items:center;gap:1px;margin-bottom:3px}
+.maps-done{font-size:10px;font-weight:600;color:var(--p)}
+/* Competitor rows */
+.maps-comp{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 4px;border-radius:8px;margin-bottom:2px;
+}
+.maps-comp-icon{
+  width:28px;height:28px;border-radius:6px;
+  background:#e5e7eb;flex-shrink:0;
+}
+.maps-comp-name{font-size:12px;font-weight:500;color:#bbbcc4}
+.maps-comp-sub{font-size:10px;color:#d1d5db;margin-top:1px}
+/* Map area */
+.maps-area{flex:1;position:relative;overflow:hidden;background:#c8e6c9}
+.maps-grid-lines{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.5) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.5) 1px,transparent 1px);
+  background-size:26px 26px;
+}
+.maps-road-h{position:absolute;background:rgba(255,255,255,.85);height:10px;left:0;right:0;top:46%}
+.maps-road-v{position:absolute;background:rgba(255,255,255,.85);width:10px;top:0;bottom:0;left:40%}
+.maps-pin-wrap{
+  position:absolute;top:32%;left:38%;
+  transform:translate(-50%,-100%);
+  display:flex;flex-direction:column;align-items:center;
+}
+.maps-pin-tag{
+  background:var(--p);color:#fff;
+  font-size:10px;font-weight:600;
+  padding:3px 9px;border-radius:99px;
+  margin-bottom:4px;white-space:nowrap;
+}
+/* Review bubble */
+.maps-review{
+  position:absolute;bottom:16px;right:14px;
+  background:#fff;border-radius:10px;
+  padding:10px 13px;
+  box-shadow:0 4px 18px rgba(0,0,0,.14);
+  min-width:185px;
+}
+.maps-review-text{font-size:12px;font-weight:600;color:#1a1a2e;margin-bottom:3px}
+.maps-review-stars{display:flex;gap:2px;margin-bottom:3px}
+.maps-review-by{font-size:10px;color:#999}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .sec{padding:72px 0}
+  #hero{padding-top:110px}
+  .h1{letter-spacing:-2px}
+  .h2{letter-spacing:-1.2px}
+  .hero-sub{font-size:16px}
+  .nav-pill{min-width:0;padding:8px 8px 8px 18px;gap:12px}
+  .logo{font-size:16px}
+  .nav-links{display:none}
+  .hero-stats{grid-template-columns:repeat(2,1fr)}
+  .hero-preview{padding:48px 16px 0}
+  .maps-body{height:240px}
+  .maps-list{width:180px}
+  .maps-review{min-width:140px;right:8px;bottom:8px}
+  .emp-grid{grid-template-columns:1fr}
+  .result-card{flex:0 0 75vw}
+  .pkg-grid{grid-template-columns:1fr}
+  .pkg-price{font-size:20px}
+  .f-row{grid-template-columns:1fr}
+  .ft-inner{flex-direction:column}
+  .ft-copy{align-self:flex-start}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-pill">
+    <a href="#" class="logo">HATCH</a>
+    <ul class="nav-links">
+      <li><a href="#problem">현황</a></li>
+      <li><a href="#results">실제 성과</a></li>
+      <li><a href="#process">프로세스</a></li>
+      <li><a href="#packages">플랜</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a href="#contact" class="btn-p">무료 상담 신청</a>
+    <button class="nav-hbg" id="hbg" aria-label="메뉴" style="display:none">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- SECTION 1: HERO -->
+<section id="hero" class="sec">
+  <div class="wrap">
+    <div class="hero-badge rev">
+      <span class="hero-badge-tag">국내 유일</span>
+      외국인 관광객 유입 전문
+    </div>
+    <h1 class="h1 hero-h1 rev">
+      당신의 매장에<br><span class="grad-text">외국인 손님이 찾아오게</span><br>하는 방법
+    </h1>
+    <p class="hero-sub rev">
+      외국인 관광객은 네이버가 아닌 구글맵으로 검색합니다.<br>
+      Hatch가 검색 상단에 올려드립니다.
+    </p>
+    <div class="hero-cta-wrap rev">
+      <a href="#contact" class="btn-p lg">무료 상담 신청하기</a>
+      <a href="#packages" class="btn-ghost lg">서비스 패키지 보기</a>
+    </div>
+
+    <div class="hero-stats rev">
+      <div class="h-stat">
+        <div class="h-stat-icon">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <p class="h-stat-text"><strong>2,000만</strong> 2025년 방한<br>외국인 관광객</p>
+      </div>
+      <div class="h-stat">
+        <div class="h-stat-icon">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M3 17l4-4 4 4 4-6 4 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3v18h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <p class="h-stat-text"><strong>×10</strong> 실제 클라이언트<br>외국인 매출 성장</p>
+      </div>
+      <div class="h-stat">
+        <div class="h-stat-icon">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <p class="h-stat-text"><strong>3개월</strong> 성과를<br>실감하는 평균 기간</p>
+      </div>
+      <div class="h-stat">
+        <div class="h-stat-icon">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="h-stat-text"><strong>국내 유일</strong> 외국인 관광객<br>특화 구글맵 최적화</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HERO PREVIEW: GBP Graph -->
+<div class="hero-preview rev">
+  <div class="p-blob p-blob-1"></div>
+  <div class="p-blob p-blob-2"></div>
+  <div class="p-blob p-blob-3"></div>
+  <div class="preview-card">
+
+    <!-- Browser Chrome -->
+    <div class="maps-chrome">
+      <div class="chrome-dots">
+        <div class="chrome-dot r"></div>
+        <div class="chrome-dot y"></div>
+        <div class="chrome-dot g"></div>
+      </div>
+      <div class="chrome-url">google.com/maps</div>
+    </div>
+
+    <!-- Maps Body -->
+    <div class="maps-body">
+
+      <!-- Left: Search Results -->
+      <div class="maps-list">
+        <div class="maps-list-title">근처 매장 검색 결과</div>
+
+        <!-- 1위 -->
+        <div class="maps-top">
+          <div class="maps-top-row">
+            <div class="maps-icon-box">
+              H
+              <div class="maps-rank">1위</div>
+            </div>
+            <div>
+              <div class="maps-store-name">내 매장 이름</div>
+              <div class="maps-stars">
+                <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+                <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+                <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+                <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+                <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+                <span style="font-size:11px;color:#555;margin-left:2px">4.9</span>
+              </div>
+              <div class="maps-done">최적화 완료</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 경쟁 매장 A -->
+        <div class="maps-comp">
+          <div class="maps-comp-icon"></div>
+          <div>
+            <div class="maps-comp-name">경쟁 매장 A</div>
+            <div class="maps-comp-sub">정보 없음</div>
+          </div>
+        </div>
+
+        <!-- 경쟁 매장 B -->
+        <div class="maps-comp">
+          <div class="maps-comp-icon"></div>
+          <div>
+            <div class="maps-comp-name">경쟁 매장 B</div>
+            <div class="maps-comp-sub">정보 없음</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Map -->
+      <div class="maps-area">
+        <div class="maps-grid-lines"></div>
+        <div class="maps-road-h"></div>
+        <div class="maps-road-v"></div>
+
+        <!-- Pin -->
+        <div class="maps-pin-wrap">
+          <div class="maps-pin-tag">내 매장</div>
+          <svg width="28" height="36" viewBox="0 0 28 36" fill="none">
+            <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#6C5CE7"/>
+            <circle cx="14" cy="14" r="5.5" fill="#fff"/>
+          </svg>
+        </div>
+
+        <!-- Review bubble -->
+        <div class="maps-review">
+          <div class="maps-review-text">"Amazing place!"</div>
+          <div class="maps-review-stars">
+            <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+            <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+            <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+            <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+            <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" fill="#f4b400"/></svg>
+          </div>
+          <div class="maps-review-by">John from USA · 2 days ago</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: EMPATHY -->
+<section id="problem" class="sec">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="pill rev">현황</span>
+      <h2 class="h2 rev">외국인 관광객이 당신의 매장을<br><span class="highlight">지나치는 이유</span></h2>
+      <p class="rev">외국인이 찾지 못하는 매장, 그 이유를 파악하는 것이 시작입니다</p>
+    </div>
+    <div class="emp-grid">
+
+      <div class="emp-card rev rev-1">
+        <div class="emp-icon" style="background:rgba(108,92,231,.08)">
+          <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#6C5CE7" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+            <circle cx="12" cy="9" r="2.5" stroke="#6C5CE7" stroke-width="1.8" fill="none"/>
+          </svg>
+        </div>
+        <h3>구글맵 정보가 없거나 부실합니다</h3>
+        <p>외국인의 90% 이상은 구글맵으로 장소를 찾습니다. 매장이 구글맵에 없다면 외국인들은 검색으로 찾아갈 수 없습니다.</p>
+      </div>
+
+      <div class="emp-card rev rev-2">
+        <div class="emp-icon" style="background:rgba(108,92,231,.08)">
+          <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#6C5CE7" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+            <path d="M8 10h8M8 13h5" stroke="#6C5CE7" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3>영어 메뉴·정보가 없습니다</h3>
+        <p>외국어 설명·메뉴·사진이 없으면 당신의 매장이 어떤 상품을 판매하는지 알 수 없습니다.</p>
+      </div>
+
+      <div class="emp-card rev rev-3">
+        <div class="emp-icon" style="background:rgba(108,92,231,.08)">
+          <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+            <path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-1.01z" stroke="#6C5CE7" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </div>
+        <h3>외국인 리뷰가 없어 신뢰가 부족합니다</h3>
+        <p>한국인들이 한국인의 리뷰를 신뢰하듯, 외국인들은 같은 외국인이 남긴 리뷰를 가장 신뢰합니다.</p>
+      </div>
+
+    </div>
+    <div class="emp-cta-banner rev">
+      <p>이 세 가지 문제를 동시에 해결할 수 있는<br><strong>국내 유일한 구글맵 최적화 전문 에이전시, Hatch입니다.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: RESULTS CAROUSEL -->
+<section id="results" class="sec">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="pill rev">실제 성과</span>
+      <h2 class="h2 rev"><span class="highlight">숫자로</span> 증명합니다</h2>
+      <p class="rev">HATCH와 함께한 매장들의 실제 결과입니다</p>
+    </div>
+  </div>
+  <div style="margin-top:48px">
+    <div class="carousel-wrapper" id="carouselWrapper">
+      <div class="carousel-track" id="carouselTrack">
+
+        <!-- Card 1 -->
+        <div class="result-card">
+          <span class="result-tag">촬영 스튜디오</span>
+          <div class="result-metric">
+            <p class="result-metric-text">전체 매출 2배</p>
+            <span class="result-period">3개월 만에</span>
+          </div>
+          <p class="result-quote">"비수기 없는 매출 구조가 만들어졌어요"</p>
+          <div class="result-contract">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#6C5CE7" stroke-width="1.2"/><path d="M6 3v3l2 1.5" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span>14개월 서비스 이용 중</span><!-- TODO: 실제 기간으로 교체 -->
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="result-card">
+          <span class="result-tag">한식 음식점</span>
+          <div class="result-metric">
+            <p class="result-metric-text">외국인 매출 10배</p>
+            <span class="result-period">3개월 만에</span>
+          </div>
+          <p class="result-quote">"외국인 손님이 스스로 찾아오기 시작했어요"</p>
+          <div class="result-contract">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#6C5CE7" stroke-width="1.2"/><path d="M6 3v3l2 1.5" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span>8개월 서비스 이용 중</span><!-- TODO: 실제 기간으로 교체 -->
+          </div>
+        </div>
+
+        <!-- TODO: 실제 내용으로 교체 예정 -->
+        <!-- Card 3 -->
+        <div class="result-card">
+          <span class="result-tag">오락실</span>
+          <div class="result-metric">
+            <p class="result-metric-text">월 예약 100건</p>
+            <span class="result-period">2개월 만에</span>
+          </div>
+          <p class="result-quote">"입구에서 지나가던 외국인 손님들이 즐기고 나가세요"</p>
+          <div class="result-contract">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#6C5CE7" stroke-width="1.2"/><path d="M6 3v3l2 1.5" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span>10개월 서비스 이용 중</span>
+          </div>
+        </div>
+
+        <!-- TODO: 실제 내용으로 교체 예정 -->
+        <!-- Card 4 -->
+        <div class="result-card">
+          <span class="result-tag">지자체 외국인 대상 관광 프로그램</span>
+          <div class="result-metric">
+            <p class="result-metric-text">30팀</p>
+            <span class="result-period">일주일 만에</span>
+          </div>
+          <p class="result-quote">"신청 미달에서 정원 초과로"</p>
+          <div class="result-contract">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#6C5CE7" stroke-width="1.2"/><path d="M6 3v3l2 1.5" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span>1회성 프로그램</span>
+          </div>
+        </div>
+
+        <!-- TODO: 실제 내용으로 교체 예정 -->
+        <!-- Card 5 -->
+        <div class="result-card">
+          <span class="result-tag">건강식 음식점</span>
+          <div class="result-metric">
+            <p class="result-metric-text">1일 10팀</p>
+            <span class="result-period">3개월 만에</span>
+          </div>
+          <p class="result-quote">"외국인 손님들이 어려워하는 음식일줄 알았는데, 외국인 손님들도 맛있게 즐겨주세요"</p>
+          <div class="result-contract">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#6C5CE7" stroke-width="1.2"/><path d="M6 3v3l2 1.5" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span>10개월 서비스 이용 중</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="car-ctrl">
+        <button class="car-btn" id="carPrev" aria-label="이전">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="#6C5CE7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="car-dots" id="carDots"></div>
+        <button class="car-btn" id="carNext" aria-label="다음">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="#6C5CE7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: PROCESS -->
+<section id="process" class="sec">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="pill rev">4단계 작업 방식</span>
+      <h2 class="h2 rev">HATCH는 <span class="highlight">이렇게 </span>일합니다</h2>
+      <p class="rev">처음부터 끝까지 전문가가 직접 진행합니다</p>
+    </div>
+    <div class="proc-steps">
+
+      <div class="proc-step rev rev-1">
+        <div class="proc-step-rail">
+          <div class="proc-num">01</div>
+          <div class="proc-rail-line"></div>
+        </div>
+        <div class="proc-card">
+          <div class="proc-card-top">
+            <h3>현황 진단</h3>
+            <span class="proc-dur">1~2일</span>
+          </div>
+          <p>구글맵 현재 상태를 외국인 관점에서 정밀 분석합니다</p>
+        </div>
+      </div>
+
+      <div class="proc-step rev rev-2">
+        <div class="proc-step-rail">
+          <div class="proc-num">02</div>
+          <div class="proc-rail-line"></div>
+        </div>
+        <div class="proc-card">
+          <div class="proc-card-top">
+            <h3>구글 비즈니스 최적화</h3>
+            <span class="proc-dur">3~5일</span>
+          </div>
+          <p>외국인이 검색했을 때 가장 먼저 눈에 띄도록 세팅합니다</p>
+        </div>
+      </div>
+
+      <div class="proc-step rev rev-3">
+        <div class="proc-step-rail">
+          <div class="proc-num">03</div>
+          <div class="proc-rail-line"></div>
+        </div>
+        <div class="proc-card">
+          <div class="proc-card-top">
+            <h3>다국어 콘텐츠 제작</h3>
+            <span class="proc-dur">1주</span>
+          </div>
+          <p>외국인 손님이 불편 없이 이용할 수 있는 환경을 만듭니다</p>
+        </div>
+      </div>
+
+      <div class="proc-step rev rev-4">
+        <div class="proc-step-rail">
+          <div class="proc-num">04</div>
+          <div class="proc-rail-line"></div>
+        </div>
+        <div class="proc-card">
+          <div class="proc-card-top">
+            <h3>리뷰 성장 시스템 구축</h3>
+            <span class="proc-dur">1~2주</span>
+          </div>
+          <p>방문한 외국인이 리뷰를 남기고 새 손님을 불러오는 구조를 완성합니다</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: PACKAGES -->
+<section id="packages" class="sec">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="pill rev">플랜 안내</span>
+      <h2 class="h2 rev">사장님 상황에 맞는<br><span class="highlight">플랜을 선택하세요</span></h2>
+      <p class="rev">합리적인 비용으로 외국인 관광객 유입을 시작하세요</p>
+    </div>
+    <div class="pkg-grid">
+
+      <div class="pkg-card rev rev-1">
+        <div class="pkg-price">Basic</div>
+        <div class="pkg-sub">구글맵 최적화의 핵심 패키지</div>
+        <div class="pkg-divider"></div>
+        <ul class="pkg-features">
+          <li>구글 비즈니스 프로필 완전 최적화</li>
+          <li>영어 기본 정보 및 메뉴 작성</li>
+          <li>핵심 검색 키워드 설정</li>
+          <li>외국인 리뷰 유도 전략 제공</li>
+          <li>최적화 완료 보고서</li>
+        </ul>
+        <a href="#contact" class="pkg-cta outline">이 패키지로 상담하기</a>
+      </div>
+
+      <div class="pkg-card hot rev rev-2">
+        <div class="pkg-badge">RECOMMENDED</div>
+        <div class="pkg-price">Standard</div>
+        <div class="pkg-sub">최적화 + 3개월 사후 관리</div>
+        <div class="pkg-divider"></div>
+        <ul class="pkg-features">
+          <li>Basic 패키지 전체 포함</li>
+          <li>다국어 콘텐츠 제작 (영문+일문+중문)</li>
+          <li>관광 콘텐츠 제작</li>
+          <li>매장 사진 최적화 가이드</li>
+          <li>월간 성과 리포트</li>
+          <li>우선 지원 및 빠른 응대</li>
+        </ul>
+        <a href="#contact" class="pkg-cta fill">이 패키지로 상담하기</a>
+      </div>
+
+      <div class="pkg-card rev rev-3">
+        <div class="pkg-price">Enterprise</div>
+        <div class="pkg-sub">프랜차이즈·다매장 맞춤 전략</div>
+        <div class="pkg-divider"></div>
+        <ul class="pkg-features">
+          <li>전체 매장 구글맵 통합 관리</li>
+          <li>매장별 맞춤 키워드 전략</li>
+          <li>다국어 브랜드 콘텐츠 제작</li>
+          <li>프랜차이즈 리뷰 운영 시스템</li>
+          <li>맞춤 성과 리포트</li>
+        </ul>
+        <a href="#contact" class="pkg-cta outline">견적 문의하기</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: FAQ -->
+<section id="faq" class="sec">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="pill rev">FAQ</span>
+      <h2 class="h2 rev">자주 묻는 <span class="highlight">질문</span></h2>
+      <p class="rev">궁금한 점이 있으시면 언제든 문의해 주세요</p>
+    </div>
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <button class="faq-q">
+          어떤 업종에 적합한가요?
+          <span class="faq-arrow">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>
+          </span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-in">음식점, 카페, 뷰티샵, 스튜디오, 숙박, 쇼핑 등 외국인 관광객이 방문할 수 있는 모든 업종에 적합합니다. 외국인 유동인구가 적은 지역도 구글맵 특성상 "근처 검색"으로 유입되기 때문에 업종·지역 제한 없이 효과를 볼 수 있습니다.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          효과가 나타나는 데 얼마나 걸리나요?
+          <span class="faq-arrow">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>
+          </span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-in">노출 순위 변화는 보통 2~4주 안에 시작됩니다. 실질적인 외국인 방문 증가는 평균 3개월 안에 실감하시며, 빠른 경우 2개월 만에 매출 변화를 경험하셨습니다. 구글맵은 리뷰가 쌓일수록 효과가 커지는 구조라 시간이 지날수록 성과가 강해집니다.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          이미 구글맵에 등록되어 있는데 뭐가 달라지나요?
+          <span class="faq-arrow">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>
+          </span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-in">단순 등록과 최적화된 운영은 검색 노출 순위에서 큰 차이가 납니다. 구글 알고리즘 기준에 맞는 카테고리 설정, 키워드 최적화, 사진 구성, 다국어 정보 입력 등 수십 가지 요소가 순위를 결정합니다. 현재 프로필 진단 신청 시 개선 가능 항목을 구체적으로 안내해 드립니다.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          외국인이 많지 않은 지역이나 업종도 효과 있나요?
+          <span class="faq-arrow">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>
+          </span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-in">오히려 경쟁이 적은 지역일수록 상위 노출이 빠릅니다. 외국인 관광객은 구글맵에서 "근처 맛집", "Korean experience" 같은 키워드로 검색하기 때문에 도심 외 지역도 충분히 유입이 가능합니다. 지역·업종별 전략이 달라지므로 상담 시 말씀해 주시면 정확히 안내해 드립니다.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          Basic와 Standard의 차이가 뭔가요?
+          <span class="faq-arrow">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>
+          </span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-in">Basic은 구글맵 상위 노출 관리와 리뷰 응대를 제공합니다. Standard은 여기에 구글 광고 운영과 리뷰 유도 시스템이 추가되어, 자연 유입과 광고 유입을 동시에 가져가는 구조입니다. 외국인 매출을 빠르게 키우고 싶다면 Standard을 추천드립니다.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7: CONTACT -->
+<section id="contact" class="sec">
+  <div class="wrap">
+    <div class="contact-inner">
+      <div class="section-header">
+        <span class="pill rev">무료 상담</span>
+        <h2 class="h2 rev">지금 신청하면 24시간 내<br><span class="highlight">진단 결과를 드립니다</span></h2>
+        <p class="rev">전문가가 직접 현황을 분석하고 맞춤 전략을 제안드립니다</p>
+      </div>
+      <div class="form-wrap rev">
+        <form id="cform">
+          <div class="f-row">
+            <div class="f-group">
+              <label class="f-label" for="f-store">매장명 *</label>
+              <input id="f-store" class="f-input" type="text" placeholder="매장 이름" required>
+            </div>
+            <div class="f-group">
+              <label class="f-label" for="f-cat">업종 *</label>
+              <select id="f-cat" class="f-input" required>
+                <option value="">업종 선택</option>
+                <option>음식점·카페</option>
+                <option>숙박·게스트하우스</option>
+                <option>뷰티·네일·헤어</option>
+                <option>체험·스튜디오</option>
+                <option>쇼핑·편집샵</option>
+                <option>기타</option>
+              </select>
+            </div>
+          </div>
+          <div class="f-row">
+            <div class="f-group">
+              <label class="f-label" for="f-name">담당자 성함 *</label>
+              <input id="f-name" class="f-input" type="text" placeholder="홍길동" required>
+            </div>
+            <div class="f-group">
+              <label class="f-label" for="f-tel">연락처 *</label>
+              <input id="f-tel" class="f-input" type="tel" placeholder="010-0000-0000" required>
+            </div>
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="f-msg">현재 가장 큰 고민 (선택)</label>
+            <textarea id="f-msg" class="f-input" placeholder="예: 외국인 손님이 전혀 없어요 / 구글맵 등록은 했는데 손님이 안 와요"></textarea>
+          </div>
+          <button type="submit" class="f-sub">무료 진단 신청하기 →</button>
+        </form>
+        <div class="ty-msg" id="ty">
+          <svg width="48" height="48" fill="none" viewBox="0 0 24 24"><path stroke="#6C5CE7" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path stroke="#6C5CE7" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M22 4L12 14.01l-3-3"/></svg>
+          <p>감사합니다.</p>
+          <small>24시간 내 담당자가 연락드리겠습니다.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="footer">
+  <div class="wrap">
+    <div class="ft-inner">
+      <div>
+        <div class="ft-logo">HATCH</div>
+        <div class="ft-info">
+          상호명: Hatch &nbsp;|&nbsp; 대표자: 최효빈 &nbsp;|&nbsp; 사업자등록번호: 526-32-01711<br>
+          통신판매업 신고번호: 2025-서울성동-0440<br>
+          주소: 서울 성동구 연무장길 49 가동 301호<br>
+          전화: <a href="tel:010-8795-5232">010-8795-5232</a> &nbsp;|&nbsp;
+          이메일: <a href="mailto:hyobin@hatch-away.com">hyobin@hatch-away.com</a>
+        </div>
+      </div>
+      <div class="ft-copy">© 2025 HATCH. All rights reserved.</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// --- NAV: deepen shadow on scroll ---
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('sc', window.scrollY > 40);
+});
+
+// --- SMOOTH SCROLL ---
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// --- SCROLL REVEAL ---
+const ro = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('on'); ro.unobserve(e.target); }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -36px 0px' });
+document.querySelectorAll('.rev').forEach(el => ro.observe(el));
+
+// --- CAROUSEL (4 visible: 2 active center, 2 side) ---
+(function() {
+  const wrapper = document.getElementById('carouselWrapper');
+  const track   = document.getElementById('carouselTrack');
+  const cards   = Array.from(track.querySelectorAll('.result-card'));
+  const dotsEl  = document.getElementById('carDots');
+  const prevBtn = document.getElementById('carPrev');
+  const nextBtn = document.getElementById('carNext');
+  const total   = cards.length;
+  let cur = 1, startX = 0, dragX = 0, dragging = false;
+
+  function isMobile() { return window.innerWidth <= 768; }
+
+  function buildDots() {
+    dotsEl.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+      const d = document.createElement('div');
+      d.className = 'c-dot';
+      d.addEventListener('click', () => go(i + 1));
+      dotsEl.appendChild(d);
+    }
+  }
+
+  function go(idx) {
+    cur = Math.max(1, Math.min(idx, total));
+    const cardW = cards[0].offsetWidth || (isMobile() ? window.innerWidth * 0.75 : window.innerWidth * 0.25 - 15);
+    const step  = cardW + 20;
+    const active = cur - 1; // 0-indexed
+
+    // 클래스 적용
+    cards.forEach((c, i) => {
+      c.classList.remove('active', 'side', 'hidden');
+      if (i === active)                               c.classList.add('active');
+      else if (i === active - 1 || i === active + 1)  c.classList.add('side');
+      else                                            c.classList.add('hidden');
+    });
+
+    // 트랙 이동 (active 카드 중앙 정렬)
+    const tx = (wrapper.offsetWidth - cardW) / 2 - active * step;
+    track.style.transform = `translateX(${tx}px)`;
+
+    // 도트
+    dotsEl.querySelectorAll('.c-dot').forEach((d, i) => d.classList.toggle('on', i === active));
+
+    // 버튼 활성화
+    const atStart = cur <= 1;
+    const atEnd   = cur >= total;
+    prevBtn.disabled = atStart;
+    nextBtn.disabled = atEnd;
+    prevBtn.style.opacity = atStart ? '0.3' : '1';
+    nextBtn.style.opacity = atEnd   ? '0.3' : '1';
+  }
+
+  // 초기화
+  buildDots();
+  track.style.transition = 'none';
+  setTimeout(function() {
+    track.style.transition = '';
+    go(1);
+  }, 0);
+
+  window.addEventListener('resize', function() { buildDots(); go(Math.min(cur, maxCur())); });
+  prevBtn.addEventListener('click', () => go(cur - 1));
+  nextBtn.addEventListener('click', () => go(cur + 1));
+
+  // 드래그 / 터치
+  function onStart(x) { startX = x; dragging = true; dragX = 0; }
+  function onMove(x)  { if (dragging) dragX = x - startX; }
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    if (dragX < -50) go(cur + 1);
+    else if (dragX > 50) go(cur - 1);
+    dragX = 0;
+  }
+
+  wrapper.addEventListener('mousedown',  e => onStart(e.clientX));
+  wrapper.addEventListener('mousemove',  e => onMove(e.clientX));
+  wrapper.addEventListener('mouseup',    onEnd);
+  wrapper.addEventListener('mouseleave', onEnd);
+  wrapper.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
+  wrapper.addEventListener('touchmove',  e => onMove(e.touches[0].clientX),  { passive: true });
+  wrapper.addEventListener('touchend',   onEnd);
+})();
+
+// --- FAQ: one-at-a-time accordion ---
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+
+    // Close all
+    document.querySelectorAll('.faq-item').forEach(i => {
+      i.classList.remove('open');
+      i.querySelector('.faq-a').style.maxHeight = '0';
+    });
+
+    // Open clicked if it was closed
+    if (!isOpen) {
+      item.classList.add('open');
+      item.querySelector('.faq-a').style.maxHeight =
+        item.querySelector('.faq-a').scrollHeight + 'px';
+    }
+  });
+});
+
+// --- FORM ---
+// --- SUPABASE ---
+const _sb = supabase.createClient(
+  'https://rinegmiqquwizxyqomtv.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpbmVnbWlxcXV3aXp4eXFvbXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MDgzMTcsImV4cCI6MjA5MDE4NDMxN30.UfMO_2SW-8eehyW3LjNR_mLY469K35K9pkCo3iXKobQ'
+);
+
+document.getElementById('cform').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = this.querySelector('.f-sub');
+  btn.disabled = true;
+  btn.textContent = '신청 중...';
+
+  const { error } = await _sb.from('consultations').insert({
+    store_name: document.getElementById('f-store').value,
+    category:   document.getElementById('f-cat').value,
+    name:       document.getElementById('f-name').value,
+    phone:      document.getElementById('f-tel').value,
+    message:    document.getElementById('f-msg').value,
+  });
+
+  if (error) {
+    console.error(error);
+    btn.disabled = false;
+    btn.textContent = '무료 진단 신청하기 →';
+    alert('제출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+
+  this.style.display = 'none';
+  document.getElementById('ty').style.display = 'block';
+});
+</script>
+</body>
+</html>
