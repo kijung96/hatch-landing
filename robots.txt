@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://hatch-landing-git-main-kijung96s-projects.vercel.app/sitemap.xml
+Sitemap: https://www.hatch-away.com/sitemap.xml
